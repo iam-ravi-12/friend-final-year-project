@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { postService } from '../services/postService';
 import { mediaService } from '../services/mediaService';
 import './CreatePost.css';
@@ -25,7 +25,6 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
     
     const previews = [];
     const selectedFiles = [];
-    const previousPreviews = mediaPreview;
     
     try {
       for (const file of files) {
@@ -52,20 +51,22 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
       
       setMediaFiles(selectedFiles);
       setMediaPreview(previews);
-      previousPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
     } catch (err) {
       setError('Failed to process media files. Please try again.');
       console.error('Media processing error:', err);
-    } finally {
-      setUploadingMedia(false);
     }
   };
 
   const handleRemoveMedia = (index) => {
-    URL.revokeObjectURL(mediaPreview[index]?.url);
     setMediaFiles(mediaFiles.filter((_, i) => i !== index));
     setMediaPreview(mediaPreview.filter((_, i) => i !== index));
   };
+
+  useEffect(() => {
+    return () => {
+      mediaPreview.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [mediaPreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,7 +88,6 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
       }
 
       await postService.createPost(content, isHelp, mediaUrls, showInHome);
-      mediaPreview.forEach((preview) => URL.revokeObjectURL(preview.url));
       setContent('');
       setMediaFiles([]);
       setMediaPreview([]);

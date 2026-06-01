@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Locale;
+import java.util.Set;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 public class CloudinaryStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(CloudinaryStorageService.class);
+    private static final Set<String> AUDIO_EXTENSIONS = Set.of("mp3", "aac", "m4a", "wav", "ogg");
 
     @Value("${CLOUDINARY_CLOUD_NAME:#{null}}")
     private String cloudName;
@@ -125,8 +127,7 @@ public class CloudinaryStorageService {
         if (url == null) return "image";
         String lower = url.toLowerCase(Locale.ROOT);
         if (lower.contains("/video/upload/")) {
-            if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".aac")
-                    || lower.endsWith(".m4a") || lower.endsWith(".ogg")) {
+            if (hasAudioExtension(lower)) {
                 return "audio";
             }
             return "video";
@@ -134,8 +135,7 @@ public class CloudinaryStorageService {
         if (lower.endsWith(".mp4") || lower.endsWith(".mov") || lower.endsWith(".webm") || lower.endsWith(".avi")) {
             return "video";
         }
-        if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".aac")
-                || lower.endsWith(".m4a") || lower.endsWith(".ogg")) {
+        if (hasAudioExtension(lower)) {
             return "audio";
         }
         return "image";
@@ -147,8 +147,7 @@ public class CloudinaryStorageService {
             return null;
         }
         String path = parts[1];
-        int versionIndex = path.indexOf("v");
-        if (versionIndex == 0 && path.length() > 2) {
+        if (path.startsWith("v") && path.length() > 2 && Character.isDigit(path.charAt(1))) {
             int slashIndex = path.indexOf("/", 2);
             if (slashIndex > 0) {
                 path = path.substring(slashIndex + 1);
@@ -163,5 +162,14 @@ public class CloudinaryStorageService {
             path = path.substring(0, extensionIndex);
         }
         return path;
+    }
+
+    private static boolean hasAudioExtension(String url) {
+        for (String extension : AUDIO_EXTENSIONS) {
+            if (url.endsWith("." + extension)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
