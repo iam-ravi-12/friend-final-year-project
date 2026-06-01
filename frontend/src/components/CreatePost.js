@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { postService } from '../services/postService';
-import { compressMediaFile } from '../utils/mediaUtils';
+import { mediaService } from '../services/mediaService';
 import './CreatePost.css';
 
 const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
@@ -11,7 +11,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
   const [mediaPreview, setMediaPreview] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [compressing, setCompressing] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const handleMediaChange = async (e) => {
     const files = Array.from(e.target.files);
@@ -21,50 +21,48 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
       return;
     }
 
-    setCompressing(true);
     setError('');
     
     const previews = [];
-    const base64Files = [];
+    const selectedFiles = [];
     
     try {
+      mediaPreview.forEach((preview) => URL.revokeObjectURL(preview.url));
+
       for (const file of files) {
-        // Validate file size (max 10MB before compression)
-        if (file.size > 10 * 1024 * 1024) {
-          setError(`File ${file.name} is too large. Max size is 10MB`);
-          setCompressing(false);
-          return;
-        }
-
-        // Validate file type
-        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        if (!isImage && !isVideo) {
           setError(`File ${file.name} is not a valid image or video`);
-          setCompressing(false);
+          return;
+        }
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          setError(`File ${file.name} is too large. Max size is ${isVideo ? '50MB' : '10MB'}`);
           return;
         }
 
-        // Compress the file
-        const compressedBase64 = await compressMediaFile(file);
-        
-        base64Files.push(compressedBase64);
+        const previewUrl = URL.createObjectURL(file);
+        selectedFiles.push(file);
         previews.push({
-          type: file.type.startsWith('image/') ? 'image' : 'video',
-          url: compressedBase64,
+          type: isImage ? 'image' : 'video',
+          url: previewUrl,
           name: file.name
         });
       }
       
-      setMediaFiles(base64Files);
+      setMediaFiles(selectedFiles);
       setMediaPreview(previews);
     } catch (err) {
       setError('Failed to process media files. Please try again.');
-      console.error('Media compression error:', err);
+      console.error('Media processing error:', err);
     } finally {
-      setCompressing(false);
+      setUploadingMedia(false);
     }
   };
 
   const handleRemoveMedia = (index) => {
+    URL.revokeObjectURL(mediaPreview[index]?.url);
     setMediaFiles(mediaFiles.filter((_, i) => i !== index));
     setMediaPreview(mediaPreview.filter((_, i) => i !== index));
   };
@@ -81,7 +79,15 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
     setError('');
 
     try {
-      await postService.createPost(content, isHelp, mediaFiles, showInHome);
+      let mediaUrls = [];
+      if (mediaFiles.length > 0) {
+        setUploadingMedia(true);
+        const uploads = await mediaService.uploadMediaFiles(mediaFiles, 'posts');
+        mediaUrls = uploads.map((upload) => upload.url);
+      }
+
+      await postService.createPost(content, isHelp, mediaUrls, showInHome);
+      mediaPreview.forEach((preview) => URL.revokeObjectURL(preview.url));
       setContent('');
       setMediaFiles([]);
       setMediaPreview([]);
@@ -89,6 +95,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
     } catch (err) {
       setError(err.response?.data || 'Failed to create post. Please try again.');
     } finally {
+      setUploadingMedia(false);
       setLoading(false);
     }
   };
@@ -98,7 +105,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
       <h3>Create a Post</h3>
       
       {error && <div className="error-message">{error}</div>}
-      {compressing && <div className="info-message">Compressing media files...</div>}
+      {uploadingMedia && <div className="info-message">Uploading media files...</div>}
       
       <form onSubmit={handleSubmit}>
         <textarea
@@ -124,7 +131,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
                   type="button"
                   className="media-remove-btn"
                   onClick={() => handleRemoveMedia(index)}
-                  disabled={loading}
+                  disabled={loading || uploadingMedia}
                 >
                   ✕
                 </button>
@@ -161,11 +168,11 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
                 accept="image/*,video/*"
                 multiple
                 onChange={handleMediaChange}
-                disabled={loading || compressing}
+                disabled={loading || uploadingMedia}
                 style={{ display: 'none' }}
               />
               <span className="upload-btn">
-                {compressing ? '⏳ Compressing...' : '📎 Add Photo/Video'}
+                {uploadingMedia ? '⏳ Uploading...' : '📎 Add Photo/Video'}
               </span>
             </label>
           </div>
@@ -182,7 +189,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={loading}
+              disabled={loading || uploadingMedia}
             >
               {loading ? 'Posting...' : 'Post'}
             </button>

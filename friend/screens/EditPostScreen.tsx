@@ -18,6 +18,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import postService from '../services/postService';
+import mediaService, { UploadableFile } from '../services/mediaService';
 
 export default function EditPostScreen() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -25,7 +26,7 @@ export default function EditPostScreen() {
   const [isHelpSection, setIsHelpSection] = useState(false);
   const [showInHome, setShowInHome] = useState(true);
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<UploadableFile | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -70,24 +71,20 @@ export default function EditPostScreen() {
         return;
       }
 
-      // Launch image picker with base64 option
+      // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true, // Request base64 encoding directly
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         setImageUri(asset.uri);
-        
-        // Store base64 with proper data URI prefix
-        if (asset.base64) {
-          const mimeType = asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-          setImageBase64(`data:${mimeType};base64,${asset.base64}`);
-        }
+        const mimeType = asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        const name = asset.fileName || (mimeType === 'image/png' ? 'photo.png' : 'photo.jpg');
+        setImageFile({ uri: asset.uri, mimeType, name });
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -97,7 +94,7 @@ export default function EditPostScreen() {
 
   const removeImage = () => {
     setImageUri(null);
-    setImageBase64(null);
+    setImageFile(null);
   };
 
   const handleSubmit = async () => {
@@ -119,10 +116,10 @@ export default function EditPostScreen() {
         showInHome,
       };
       
-      // If there's a new image (base64), use it
-      // Otherwise, if there's an existing image URL, keep it
-      if (imageBase64) {
-        postData.mediaUrls = [imageBase64];
+      // If there's a new image file, upload it first
+      if (imageFile) {
+        const uploaded = await mediaService.uploadMedia(imageFile, 'posts');
+        postData.mediaUrls = [uploaded.url];
       } else if (imageUri && imageUri.startsWith('http')) {
         // Image is already a URL (from backend), keep it as is
         postData.mediaUrls = [imageUri];

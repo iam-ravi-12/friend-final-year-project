@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Video, Audio, ResizeMode } from 'expo-av';
 import messageService, { MessageResponse } from '../../services/messageService';
+import mediaService, { UploadableFile } from '../../services/mediaService';
 import { useAuth } from '../../contexts/AuthContext';
 import { parseUTCDate } from '../../utils/helpers';
 
@@ -25,9 +26,9 @@ import { parseUTCDate } from '../../utils/helpers';
 
 type PendingMedia = {
   uri: string;
-  base64: string; // full data URI with prefix
   type: 'audio' | 'video';
   label: string;  // display name
+  file: UploadableFile;
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -80,20 +81,17 @@ export default function ChatScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         quality: 0.7,
-        base64: true,
         videoMaxDuration: 60,
       });
       if (!result.canceled && result.assets?.length > 0) {
         const asset = result.assets[0];
-        if (!asset.base64) {
-          Alert.alert('Not Supported', 'Base64 encoding unavailable for this video. Try a shorter clip.');
-          return;
-        }
+        const mimeType = asset.mimeType || 'video/mp4';
+        const name = asset.fileName || 'video.mp4';
         setPendingMedia({
           uri: asset.uri,
-          base64: `data:video/mp4;base64,${asset.base64}`,
           type: 'video',
           label: 'Video',
+          file: { uri: asset.uri, mimeType, name },
         });
       }
     } catch {
@@ -109,21 +107,14 @@ export default function ChatScreen() {
       });
       if (result.canceled || !result.assets?.length) return;
       const asset = result.assets[0];
-
-      // Convert file URI to base64 using fetch + blob
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setPendingMedia({
-          uri: asset.uri,
-          base64,
-          type: 'audio',
-          label: asset.name || 'Audio',
-        });
-      };
-      reader.readAsDataURL(blob);
+      const mimeType = asset.mimeType || 'audio/mpeg';
+      const name = asset.name || 'audio.mp3';
+      setPendingMedia({
+        uri: asset.uri,
+        type: 'audio',
+        label: asset.name || 'Audio',
+        file: { uri: asset.uri, mimeType, name },
+      });
     } catch {
       Alert.alert('Error', 'Failed to pick audio file');
     }
@@ -145,10 +136,18 @@ export default function ChatScreen() {
     setSending(true);
 
     try {
+      let uploadedMediaUrl: string | undefined;
+      let uploadedMediaType: 'audio' | 'video' | 'image' | undefined;
+      if (mediaToSend) {
+        const uploaded = await mediaService.uploadMedia(mediaToSend.file, 'messages');
+        uploadedMediaUrl = uploaded.url;
+        uploadedMediaType = uploaded.mediaType;
+      }
       await messageService.sendMessage({
         receiverId: Number(userId),
         content: textContent || undefined,
-        mediaBase64: mediaToSend?.base64 || undefined,
+        mediaUrl: uploadedMediaUrl,
+        mediaType: uploadedMediaType,
       });
       await loadMessages();
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);

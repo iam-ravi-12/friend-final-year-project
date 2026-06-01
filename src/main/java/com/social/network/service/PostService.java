@@ -20,16 +20,16 @@ public class PostService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
-    private final FirebaseStorageService firebaseStorageService;
+    private final CloudinaryStorageService cloudinaryStorageService;
 
     public PostService(PostRepository postRepository, UserRepository userRepository,
                        LikeRepository likeRepository, CommentRepository commentRepository,
-                       FirebaseStorageService firebaseStorageService) {
+                       CloudinaryStorageService cloudinaryStorageService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.likeRepository = likeRepository;
         this.commentRepository = commentRepository;
-        this.firebaseStorageService = firebaseStorageService;
+        this.cloudinaryStorageService = cloudinaryStorageService;
     }
 
     public PostResponse createPost(String username, PostRequest postRequest) {
@@ -47,16 +47,13 @@ public class PostService {
         post.setUser(user);
         post.setUserProfession(user.getProfession());
         
-        // Handle media URLs - upload to Firebase Storage
+        // Handle media URLs - store Cloudinary URLs only
         if (postRequest.getMediaUrls() != null && !postRequest.getMediaUrls().isEmpty()) {
+            validateMediaUrls(postRequest.getMediaUrls());
             java.util.List<String> uploadedUrls = new java.util.ArrayList<>();
-            
             for (String mediaUrl : postRequest.getMediaUrls()) {
-                // Upload each media file to Firebase Storage
-                String uploadedUrl = firebaseStorageService.uploadImage(mediaUrl, "posts");
-                uploadedUrls.add(uploadedUrl);
+                uploadedUrls.add(mediaUrl);
             }
-            
             // Use a delimiter that won't appear in URLs
             post.setMediaUrls(String.join("|||MEDIA_SEPARATOR|||", uploadedUrls));
         }
@@ -183,21 +180,20 @@ public class PostService {
         post.setIsHelpSection(postRequest.getIsHelpSection());
         post.setShowInHome(postRequest.getShowInHome());
         
-        // Handle media URLs
+        // Handle media URLs (Cloudinary URLs only)
         if (postRequest.getMediaUrls() != null && !postRequest.getMediaUrls().isEmpty()) {
+            validateMediaUrls(postRequest.getMediaUrls());
             // Delete old media from Firebase Storage if it exists
             if (post.getMediaUrls() != null && !post.getMediaUrls().isEmpty()) {
                 String[] oldUrls = post.getMediaUrls().split("\\|\\|\\|MEDIA_SEPARATOR\\|\\|\\|");
                 for (String oldUrl : oldUrls) {
-                    firebaseStorageService.deleteImage(oldUrl);
+                    cloudinaryStorageService.deleteMedia(oldUrl);
                 }
             }
             
-            // Upload new media to Firebase Storage
             java.util.List<String> uploadedUrls = new java.util.ArrayList<>();
             for (String mediaUrl : postRequest.getMediaUrls()) {
-                String uploadedUrl = firebaseStorageService.uploadImage(mediaUrl, "posts");
-                uploadedUrls.add(uploadedUrl);
+                uploadedUrls.add(mediaUrl);
             }
             
             post.setMediaUrls(String.join("|||MEDIA_SEPARATOR|||", uploadedUrls));
@@ -206,7 +202,7 @@ public class PostService {
             if (post.getMediaUrls() != null && !post.getMediaUrls().isEmpty()) {
                 String[] oldUrls = post.getMediaUrls().split("\\|\\|\\|MEDIA_SEPARATOR\\|\\|\\|");
                 for (String oldUrl : oldUrls) {
-                    firebaseStorageService.deleteImage(oldUrl);
+                    cloudinaryStorageService.deleteMedia(oldUrl);
                 }
             }
             post.setMediaUrls(null);
@@ -227,11 +223,11 @@ public class PostService {
             throw new RuntimeException("You can only delete your own posts");
         }
 
-        // Delete media from Firebase Storage if it exists
+        // Delete media from Cloudinary if it exists
         if (post.getMediaUrls() != null && !post.getMediaUrls().isEmpty()) {
             String[] mediaUrls = post.getMediaUrls().split("\\|\\|\\|MEDIA_SEPARATOR\\|\\|\\|");
             for (String mediaUrl : mediaUrls) {
-                firebaseStorageService.deleteImage(mediaUrl);
+                cloudinaryStorageService.deleteMedia(mediaUrl);
             }
         }
 
@@ -261,5 +257,15 @@ public class PostService {
         response.setLiked(currentUser != null && likeRepository.existsByPostAndUser(post, currentUser));
         return response;
     }
-}
 
+    private void validateMediaUrls(List<String> mediaUrls) {
+        for (String mediaUrl : mediaUrls) {
+            if (mediaUrl == null || mediaUrl.isBlank()) {
+                throw new RuntimeException("Media URL cannot be empty");
+            }
+            if (mediaUrl.startsWith("data:")) {
+                throw new RuntimeException("Base64 media is no longer supported. Upload via /api/media/upload.");
+            }
+        }
+    }
+}

@@ -13,13 +13,18 @@ public class MessageRequest {
     @NotNull(message = "Receiver ID is required")
     private Long receiverId;
 
-    /** Text content of the message. Optional when mediaBase64 is provided. */
+    /** Text content of the message. Optional when mediaUrl is provided. */
     private String content;
 
     /**
-     * Base64-encoded audio or video file with data URI prefix,
-     * e.g. "data:audio/m4a;base64,..." or "data:video/mp4;base64,...".
+     * Public media URL (Cloudinary) for audio or video attachments.
      * Optional — omit for text-only messages.
      */
-    private String mediaBase64;
+    private String mediaUrl;
+
+    /**
+     * Media category: "image", "audio", or "video".
+     * Optional; server will infer from URL when omitted.
+     */
+    private String mediaType;
 }

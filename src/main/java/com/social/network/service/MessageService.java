@@ -24,8 +24,6 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final FirebaseStorageService firebaseStorageService;
-
     @Transactional
     public MessageResponse sendMessage(String senderUsername, MessageRequest request) {
         User sender = userRepository.findByUsername(senderUsername)
@@ -36,7 +34,7 @@ public class MessageService {
 
         // Validate: must have text content OR media
         if ((request.getContent() == null || request.getContent().isBlank())
-                && (request.getMediaBase64() == null || request.getMediaBase64().isBlank())) {
+                && (request.getMediaUrl() == null || request.getMediaUrl().isBlank())) {
             throw new IllegalArgumentException("Message must contain text or media");
         }
 
@@ -46,11 +44,17 @@ public class MessageService {
         message.setContent(request.getContent());
         message.setIsRead(false);
 
-        // Upload media to Firebase Storage if provided
-        if (request.getMediaBase64() != null && !request.getMediaBase64().isBlank()) {
-            String uploadedUrl = firebaseStorageService.uploadMedia(request.getMediaBase64(), "messages");
-            message.setMediaUrl(uploadedUrl);
-            message.setMediaType(FirebaseStorageService.getMediaCategoryFromUri(request.getMediaBase64()));
+        // Attach media URL if provided
+        if (request.getMediaUrl() != null && !request.getMediaUrl().isBlank()) {
+            if (request.getMediaUrl().startsWith("data:")) {
+                throw new IllegalArgumentException("Base64 media is no longer supported. Upload via /api/media/upload.");
+            }
+            message.setMediaUrl(request.getMediaUrl());
+            String mediaType = request.getMediaType();
+            if (mediaType == null || mediaType.isBlank()) {
+                mediaType = CloudinaryStorageService.getMediaCategoryFromUrl(request.getMediaUrl());
+            }
+            message.setMediaType(mediaType);
         }
 
         Message savedMessage = messageRepository.save(message);

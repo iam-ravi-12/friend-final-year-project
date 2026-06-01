@@ -3,8 +3,10 @@ import api from './api';
 export interface MessageData {
   receiverId: number;
   content?: string;
-  /** Base64-encoded audio or video with data URI prefix, e.g. "data:audio/m4a;base64,..." */
-  mediaBase64?: string;
+  /** Public media URL from Cloudinary. */
+  mediaUrl?: string;
+  /** "image" | "audio" | "video" */
+  mediaType?: 'image' | 'audio' | 'video';
 }
 
 export interface MessageResponse {

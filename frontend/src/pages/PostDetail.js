@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { postService } from '../services/postService';
+import { isVideoUrl } from '../utils/mediaUtils';
 import { formatDate } from '../utils/dateUtils';
 import './PostDetail.css';
 
@@ -156,7 +157,7 @@ const PostDetail = () => {
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="post-media">
               {post.mediaUrls.map((url, index) => {
-                const isVideo = url.startsWith('data:video');
+                const isVideo = isVideoUrl(url);
                 return (
                   <div key={index} className="post-media-item">
                     {isVideo ? (

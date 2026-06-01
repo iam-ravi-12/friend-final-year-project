@@ -148,14 +148,10 @@ public class CommunityService {
         post.setUser(user);
         post.setContent(request.getContent());
         
-        // Upload media to Firebase Storage if provided
+        // Store Cloudinary URLs only
         if (request.getMediaUrls() != null && !request.getMediaUrls().isEmpty()) {
-            List<String> uploadedUrls = new java.util.ArrayList<>();
-            for (String mediaUrl : request.getMediaUrls()) {
-                String uploadedUrl = firebaseStorageService.uploadImage(mediaUrl, "community-posts");
-                uploadedUrls.add(uploadedUrl);
-            }
-            post.setMediaUrls(uploadedUrls);
+            validateMediaUrls(request.getMediaUrls());
+            post.setMediaUrls(request.getMediaUrls());
         }
         
         post.setIsApproved(false); // Requires admin approval
@@ -309,5 +305,16 @@ public class CommunityService {
                 member.getJoinedAt(),
                 user.getId().equals(adminId)
         );
+    }
+
+    private void validateMediaUrls(List<String> mediaUrls) {
+        for (String mediaUrl : mediaUrls) {
+            if (mediaUrl == null || mediaUrl.isBlank()) {
+                throw new RuntimeException("Media URL cannot be empty");
+            }
+            if (mediaUrl.startsWith("data:")) {
+                throw new RuntimeException("Base64 media is no longer supported. Upload via /api/media/upload.");
+            }
+        }
     }
 }

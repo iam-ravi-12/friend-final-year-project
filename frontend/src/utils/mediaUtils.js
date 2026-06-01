@@ -75,3 +75,23 @@ export const compressMediaFile = async (file) => {
     throw new Error('Unsupported file type');
   }
 };
+
+export const getMediaTypeFromUrl = (url) => {
+  if (!url) return 'image';
+  const lower = url.toLowerCase();
+  if (lower.includes('/video/upload/')) {
+    if (lower.endsWith('.mp3') || lower.endsWith('.aac') || lower.endsWith('.m4a') || lower.endsWith('.wav') || lower.endsWith('.ogg')) {
+      return 'audio';
+    }
+    return 'video';
+  }
+  if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.avi')) {
+    return 'video';
+  }
+  if (lower.endsWith('.mp3') || lower.endsWith('.aac') || lower.endsWith('.m4a') || lower.endsWith('.wav') || lower.endsWith('.ogg')) {
+    return 'audio';
+  }
+  return 'image';
+};
+
+export const isVideoUrl = (url) => getMediaTypeFromUrl(url) === 'video';

@@ -19,12 +19,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Video, Audio, ResizeMode } from 'expo-av';
 import postService from '../services/postService';
+import mediaService, { UploadableFile } from '../services/mediaService';
 
 type MediaItem = {
   uri: string;
-  base64: string; // full data URI with prefix
   type: 'image' | 'video' | 'audio';
   label?: string; // filename for audio
+  file: UploadableFile;
 };
 
 export default function CreatePostScreen() {
@@ -49,14 +50,12 @@ export default function CreatePostScreen() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        base64: true,
       });
       if (!result.canceled && result.assets?.length > 0) {
         const asset = result.assets[0];
-        if (asset.base64) {
-          const mime = asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-          setMedia({ uri: asset.uri, base64: `data:${mime};base64,${asset.base64}`, type: 'image' });
-        }
+        const mime = asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        const name = asset.fileName || (mime === 'image/png' ? 'photo.png' : 'photo.jpg');
+        setMedia({ uri: asset.uri, type: 'image', file: { uri: asset.uri, mimeType: mime, name } });
       }
     } catch {
       Alert.alert('Error', 'Failed to pick image');
@@ -74,16 +73,13 @@ export default function CreatePostScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         allowsEditing: true,
         quality: 0.7,
-        base64: true,
         videoMaxDuration: 120,
       });
       if (!result.canceled && result.assets?.length > 0) {
         const asset = result.assets[0];
-        if (asset.base64) {
-          setMedia({ uri: asset.uri, base64: `data:video/mp4;base64,${asset.base64}`, type: 'video' });
-        } else {
-          Alert.alert('Not Supported', 'Base64 encoding unavailable for this video. Try a shorter clip.');
-        }
+        const mimeType = asset.mimeType || 'video/mp4';
+        const name = asset.fileName || 'video.mp4';
+        setMedia({ uri: asset.uri, type: 'video', file: { uri: asset.uri, mimeType, name } });
       }
     } catch {
       Alert.alert('Error', 'Failed to pick video');
@@ -98,21 +94,14 @@ export default function CreatePostScreen() {
       });
       if (result.canceled || !result.assets?.length) return;
       const asset = result.assets[0];
-
-      // Convert file URI → base64 via fetch + FileReader
-      const response = await fetch(asset.uri);
-      const blob = await response.blob();
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setMedia({
-          uri: asset.uri,
-          base64,
-          type: 'audio',
-          label: asset.name || 'Audio file',
-        });
-      };
-      reader.readAsDataURL(blob);
+      const mimeType = asset.mimeType || 'audio/mpeg';
+      const name = asset.name || 'audio.mp3';
+      setMedia({
+        uri: asset.uri,
+        type: 'audio',
+        label: asset.name || 'Audio file',
+        file: { uri: asset.uri, mimeType, name },
+      });
     } catch {
       Alert.alert('Error', 'Failed to pick audio file');
     }
@@ -154,7 +143,8 @@ export default function CreatePostScreen() {
     try {
       const postData: any = { content, isHelpSection, showInHome };
       if (media) {
-        postData.mediaUrls = [media.base64];
+        const uploaded = await mediaService.uploadMedia(media.file, 'posts');
+        postData.mediaUrls = [uploaded.url];
       }
       await postService.createPost(postData);
       Alert.alert('Success', 'Post created successfully!');

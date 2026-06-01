@@ -107,6 +107,13 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.2.0</version>
         </dependency>
+
+        <!-- Cloudinary SDK for media uploads -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.38.0</version>
+        </dependency>
     </dependencies>
     
     <build>

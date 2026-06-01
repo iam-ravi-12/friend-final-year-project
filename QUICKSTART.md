@@ -1,166 +1,66 @@
-# Quick Start: Firebase Storage Integration
+# Quick Start: Cloudinary Media Uploads
 
 ## What Changed?
 
-Your application now uploads images to Firebase Storage instead of storing them as base64 strings in the database. This makes your app faster, more scalable, and reduces database size.
+Your application now uploads post, community post, and message media to Cloudinary instead of storing base64 strings in the database. This keeps payloads small and makes large audio/video uploads reliable.
 
 ## Do I Need to Change My Frontend?
 
-**NO!** Your frontend code works exactly as before. The backend handles everything automatically.
+**YES.** Clients must upload files to the new media upload API and send only the returned URLs in post/message payloads.
 
 ## Setup Steps (5 minutes)
 
-### 1. Enable Firebase Storage
+### 1. Create a Cloudinary Account
 
-1. Go to https://console.firebase.google.com/
-2. Select your project (the same one used for notifications)
-3. Click **"Storage"** in the left sidebar
-4. Click **"Get Started"**
-5. Click **"Next"** and then **"Done"**
+1. Go to https://cloudinary.com/ and create an account
+2. Navigate to **Dashboard** and copy:
+   - Cloud name
+   - API key
+   - API secret
 
-### 2. Set Storage Rules
+### 2. Configure Environment Variables
 
-In the Firebase Console, go to **Storage > Rules** and paste this:
+Set these variables on your backend:
 
-```javascript
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}
-```
-
-Click **"Publish"**
-
-### 3. Configure Storage Bucket
-
-You can configure the Firebase Storage bucket in two ways:
-
-**Option 1: application.properties (Easiest for local dev)**
-
-Edit `src/main/resources/application.properties` and add:
-```properties
-FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-```
-
-**Option 2: Environment Variable (Recommended for production)**
-
-Add this environment variable to your server:
 ```bash
-FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-**Where to find your bucket name:**
-- Go to Firebase Console > Storage
-- Look at the URL, it shows something like `gs://your-project-id.appspot.com`
-- Copy the part after `gs://` (e.g., `your-project-id.appspot.com`)
+**For local development:** set them in your IDE or `.env` file.
 
-**Where to add environment variable:**
+### 3. Deploy and Test
 
-**For Render:**
-1. Go to your service dashboard
-2. Click "Environment"
-3. Add: `FIREBASE_STORAGE_BUCKET` = `your-project-id.appspot.com`
-4. Click "Save Changes"
+1. Restart the backend
+2. Upload media from the web or mobile app
+3. Verify the response contains a Cloudinary URL
 
-**For Railway:**
-1. Go to your project
-2. Click "Variables"
-3. Add: `FIREBASE_STORAGE_BUCKET` = `your-project-id.appspot.com`
-4. Deploy will restart automatically
+## New Upload Flow
 
-**For local testing:**
-Add to your IDE or `.env` file:
-```bash
-FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-```
+1. Client uploads files to:
+   - `POST /api/media/upload` (single file)
+   - `POST /api/media/upload/batch` (multiple files)
+2. Backend returns `{ url, mediaType }`
+3. Client sends only URLs in `mediaUrls` or `mediaUrl` fields
 
-Or simply add it to `application.properties` as shown in Option 1.
+## Migration Notes
 
-### 4. Deploy and Test
-
-1. Deploy your backend (or restart if already deployed)
-2. Open your app
-3. Upload a profile picture
-4. Check Firebase Console > Storage - you should see the image!
-
-## What If I Don't Set It Up?
-
-The app will continue to work! It will fall back to storing images as base64 in the database (the old way). You'll see this warning in logs:
-
-```
-Firebase Storage bucket not configured. Falling back to base64 storage.
-```
-
-## Verifying It's Working
-
-### Check Logs
-Look for these success messages:
-```
-Successfully uploaded image to Firebase Storage: https://storage.googleapis.com/...
-Successfully deleted image from Firebase Storage: profiles/...
-```
-
-### Check Firebase Console
-1. Go to Firebase Console > Storage
-2. You should see folders: `profiles/`, `posts/`, `communities/`, `community-posts/`
-3. Images will appear here when users upload
-
-### Check Database
-New entries will have URLs like:
-```
-https://storage.googleapis.com/your-project.appspot.com/profiles/abc-123.jpg
-```
-
-Instead of:
-```
-data:image/jpeg;base64,/9j/4AAQSkZJRg...
-```
-
-## Cost
-
-Firebase Storage is very affordable:
-
-**Free Tier:**
-- 5 GB storage
-- 1 GB/day downloads
-- 20,000/day upload operations
-
-This is enough for small to medium apps. If you exceed this, costs are minimal (around $0.026 per GB/month).
-
-## Troubleshooting
-
-### "Images not uploading to Firebase"
-- Check the `FIREBASE_STORAGE_BUCKET` environment variable is set correctly
-- Verify your Firebase service account credentials are configured
-- Check backend logs for errors
-
-### "Images uploading but not displaying"
-- Verify Storage Rules allow public read access
-- Check browser console for CORS errors
-- Make sure bucket name is correct (no typos)
-
-### "Old images not being deleted"
-- This is normal if Firebase Storage is not configured
-- Once configured, new updates will clean up properly
-- Old base64 images in database won't be deleted (they're not in Firebase)
+- Existing base64 media in the database will still render.
+- New uploads reject base64 payloads to prevent oversized requests.
+- To migrate old media, re-upload via the new API and update the records.
 
 ## Need Help?
 
 See detailed documentation:
-- `FIREBASE_STORAGE_SETUP.md` - Complete setup guide
+- `FIREBASE_STORAGE_SETUP.md` (now Cloudinary setup)
 - `IMPLEMENTATION_SUMMARY.md` - Technical details
 
 ## Summary
 
 ✅ **Setup time:** 5 minutes  
-✅ **Code changes:** None (already done)  
-✅ **Frontend changes:** None  
-✅ **Backward compatible:** Yes  
-✅ **Cost:** Free tier sufficient for most apps  
+✅ **Payload size:** Smaller  
+✅ **Large media:** Supported  
+✅ **Cloud storage:** Cloudinary  
 
-Your app is now ready to scale! Images will load faster and your database will stay small. 🚀
+Your app is now ready for large image/audio/video uploads. 🚀

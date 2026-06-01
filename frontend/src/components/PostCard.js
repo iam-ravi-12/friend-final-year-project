@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 import { parseContentWithMentions } from '../utils/textUtils';
+import { isVideoUrl } from '../utils/mediaUtils';
 import { authService } from '../services/authService';
 import { postService } from '../services/postService';
 import './PostCard.css';
@@ -231,7 +232,7 @@ const PostCard = ({ post, onPostUpdate }) => {
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="post-media">
           {post.mediaUrls.map((url, index) => {
-            const isVideo = url.startsWith('data:video');
+            const isVideo = isVideoUrl(url);
             return (
               <div key={index} className="post-media-item">
                 {isVideo ? (
