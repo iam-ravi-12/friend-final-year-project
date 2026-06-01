@@ -25,10 +25,9 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
     
     const previews = [];
     const selectedFiles = [];
+    const previousPreviews = mediaPreview;
     
     try {
-      mediaPreview.forEach((preview) => URL.revokeObjectURL(preview.url));
-
       for (const file of files) {
         const isImage = file.type.startsWith('image/');
         const isVideo = file.type.startsWith('video/');
@@ -53,6 +52,7 @@ const CreatePost = ({ onPostCreated, onCancel, isHelpSection }) => {
       
       setMediaFiles(selectedFiles);
       setMediaPreview(previews);
+      previousPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
     } catch (err) {
       setError('Failed to process media files. Please try again.');
       console.error('Media processing error:', err);

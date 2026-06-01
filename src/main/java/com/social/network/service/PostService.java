@@ -183,7 +183,7 @@ public class PostService {
         // Handle media URLs (Cloudinary URLs only)
         if (postRequest.getMediaUrls() != null && !postRequest.getMediaUrls().isEmpty()) {
             validateMediaUrls(postRequest.getMediaUrls());
-            // Delete old media from Firebase Storage if it exists
+            // Delete old media from Cloudinary if it exists
             if (post.getMediaUrls() != null && !post.getMediaUrls().isEmpty()) {
                 String[] oldUrls = post.getMediaUrls().split("\\|\\|\\|MEDIA_SEPARATOR\\|\\|\\|");
                 for (String oldUrl : oldUrls) {

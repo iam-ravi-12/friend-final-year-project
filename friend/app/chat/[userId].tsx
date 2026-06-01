@@ -31,6 +31,16 @@ type PendingMedia = {
   file: UploadableFile;
 };
 
+const audioExtensionFromMime = (mimeType?: string) => {
+  if (!mimeType) return 'mp3';
+  const normalized = mimeType.toLowerCase();
+  if (normalized.includes('aac')) return 'aac';
+  if (normalized.includes('m4a')) return 'm4a';
+  if (normalized.includes('wav')) return 'wav';
+  if (normalized.includes('ogg')) return 'ogg';
+  return 'mp3';
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
@@ -108,7 +118,7 @@ export default function ChatScreen() {
       if (result.canceled || !result.assets?.length) return;
       const asset = result.assets[0];
       const mimeType = asset.mimeType || 'audio/mpeg';
-      const name = asset.name || 'audio.mp3';
+      const name = asset.name || `audio.${audioExtensionFromMime(mimeType)}`;
       setPendingMedia({
         uri: asset.uri,
         type: 'audio',
