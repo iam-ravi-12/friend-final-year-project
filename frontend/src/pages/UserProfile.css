@@ -1,0 +1,263 @@
+.user-profile-container {
+  min-height: 100vh;
+  background: #6b7280;
+  padding: 20px;
+}
+
+.user-profile-header {
+  margin-bottom: 30px;
+}
+
+.btn-back {
+  background: white;
+  color: #6366f1;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.user-profile-info {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 30px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.user-profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #6b7280;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.user-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-profile-details h1 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 32px;
+}
+
+.user-username {
+  color: #6366f1;
+  font-size: 16px;
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
+.profile-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.profile-header-row > div {
+  flex: 1;
+}
+
+.user-profession {
+  color: #6366f1;
+  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.user-post-count {
+  color: #666;
+  font-size: 16px;
+  margin: 0 0 20px 0;
+}
+
+.btn-message {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-message:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-follow {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-follow:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-follow.following {
+  background: #6b7280;
+}
+
+.btn-follow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.user-stats {
+  display: flex;
+  gap: 30px;
+  margin: 15px 0;
+  padding: 15px 0;
+  border-top: 2px solid #f0f0f0;
+}
+
+.user-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.user-stats .stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  background: #6b7280;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.user-stats .stat-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-stats .stat-clickable {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.user-stats .stat-clickable:hover {
+  transform: translateY(-2px);
+  opacity: 0.8;
+}
+
+.btn-edit {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.user-profile-posts {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.user-profile-posts h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.no-posts {
+  text-align: center;
+  color: #999;
+  padding: 40px;
+  font-size: 16px;
+}
+
+.posts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: white;
+  font-size: 18px;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .user-profile-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .user-profile-details h1 {
+    font-size: 24px;
+  }
+
+  .profile-header-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+}

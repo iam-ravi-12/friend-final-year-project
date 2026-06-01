@@ -1,0 +1,63 @@
+import api from './api';
+
+export const postService = {
+  createPost: async (content, isHelpSection, mediaUrls = [], showInHome = true) => {
+    const response = await api.post('/posts', { content, isHelpSection, mediaUrls, showInHome });
+    return response.data;
+  },
+
+  getAllPosts: async () => {
+    const response = await api.get('/posts/all');
+    return response.data;
+  },
+
+  getProfessionPosts: async () => {
+    const response = await api.get('/posts/profession');
+    return response.data;
+  },
+
+  getHelpPosts: async () => {
+    const response = await api.get('/posts/help');
+    return response.data;
+  },
+
+  getPostById: async (postId) => {
+    const response = await api.get(`/posts/${postId}`);
+    return response.data;
+  },
+
+  getPostsByUser: async (userId) => {
+    const response = await api.get(`/posts/user/${userId}`);
+    return response.data;
+  },
+
+  toggleLike: async (postId) => {
+    const response = await api.post(`/posts/${postId}/like`);
+    return response.data;
+  },
+
+  addComment: async (postId, content) => {
+    const response = await api.post(`/posts/${postId}/comments`, { content });
+    return response.data;
+  },
+
+  getComments: async (postId) => {
+    const response = await api.get(`/posts/${postId}/comments`);
+    return response.data;
+  },
+
+  markAsSolved: async (postId) => {
+    const response = await api.post(`/posts/${postId}/mark-solved`);
+    return response.data;
+  },
+
+  updatePost: async (postId, content, isHelpSection, mediaUrls = [], showInHome = true) => {
+    const response = await api.put(`/posts/${postId}`, { content, isHelpSection, mediaUrls, showInHome });
+    return response.data;
+  },
+
+  deletePost: async (postId) => {
+    const response = await api.delete(`/posts/${postId}`);
+    return response.data;
+  },
+};

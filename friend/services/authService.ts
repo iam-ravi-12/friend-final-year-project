@@ -1,0 +1,139 @@
+import api from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export interface SignupData {
+  username: string;
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface SignupResponse {
+  message: string;
+  email: string;
+  otpSent: boolean;
+}
+
+export interface LoginData {
+  username: string;
+  password: string;
+}
+
+export interface ProfileData {
+  name?: string;
+  profession: string;
+  organization: string;
+  location: string;
+  profilePicture?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  type: string;
+  id: number;
+  username: string;
+  email: string;
+  profileCompleted: boolean;
+  emailVerified: boolean;
+  name?: string;
+  profession?: string;
+  organization?: string;
+  location?: string;
+  profilePicture?: string;
+}
+
+export interface ProfileResponse {
+  id: number;
+  username: string;
+  email: string;
+  name?: string;
+  profession: string;
+  organization: string;
+  location?: string;
+  profilePicture?: string;
+  profileCompleted: boolean;
+}
+
+const authService = {
+  signup: async (data: SignupData): Promise<SignupResponse> => {
+    const response = await api.post('/api/auth/signup', data);
+    // Signup no longer returns token - only confirmation
+    return response.data;
+  },
+
+  login: async (data: LoginData): Promise<AuthResponse> => {
+    const response = await api.post('/api/auth/login', data);
+    if (response.data.token) {
+      await AsyncStorage.setItem('token', response.data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data));
+    }
+    return response.data;
+  },
+
+  updateProfile: async (data: ProfileData): Promise<string> => {
+    const response = await api.post('/api/auth/profile', data);
+    // Update stored user data
+    const userStr = await AsyncStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (data.name) {
+        user.name = data.name;
+      }
+      user.profession = data.profession;
+      user.organization = data.organization;
+      user.location = data.location;
+      if (data.profilePicture) {
+        user.profilePicture = data.profilePicture;
+      }
+      user.profileCompleted = true;
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+    }
+    return response.data;
+  },
+
+  getProfile: async (): Promise<ProfileResponse> => {
+    const response = await api.get('/api/auth/profile');
+    return response.data;
+  },
+
+  getUserProfile: async (userId: number): Promise<ProfileResponse> => {
+    const response = await api.get(`/api/auth/profile/${userId}`);
+    return response.data;
+  },
+
+  logout: async (): Promise<void> => {
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
+  },
+
+  getCurrentUser: async (): Promise<AuthResponse | null> => {
+    const userStr = await AsyncStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  isAuthenticated: async (): Promise<boolean> => {
+    const token = await AsyncStorage.getItem('token');
+    return !!token;
+  },
+
+  sendOTP: async (email: string): Promise<string> => {
+    const response = await api.post('/api/auth/send-otp', { email });
+    return response.data;
+  },
+
+  verifyOTP: async (email: string, otp: string): Promise<string> => {
+    const response = await api.post('/api/auth/verify-otp', { email, otp });
+    // Now returns AuthResponse with token after successful OTP verification
+    if (response.data.token) {
+      await AsyncStorage.setItem('token', response.data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data));
+    }
+    return response.data;
+  },
+
+  registerFcmToken: async (fcmToken: string): Promise<void> => {
+    await api.post('/api/auth/fcm-token', { fcmToken });
+  },
+};
+
+export default authService;
